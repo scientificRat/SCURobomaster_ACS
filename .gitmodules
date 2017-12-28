@@ -1,0 +1,3 @@
+[submodule "easy_py_server"]
+	path = easy_py_server
+	url = https://github.com/scientificRat/easy_py_server.git
