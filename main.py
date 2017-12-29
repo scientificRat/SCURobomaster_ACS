@@ -103,10 +103,14 @@ def query_visitor_stat(last_id, count):
     conn = conn_pool.get_connection()
     cur = conn.cursor()
     if last_id != -1:
-        sql = "SELECT * FROM register_visitor AS r NATURAL JOIN visitor_stat AS v WHERE v.id< %s ORDER BY v.id DESC LIMIT %s"
+        sql = "SELECT name,v.card_id,enter_time,leave_time " \
+              "FROM visitor_stat v LEFT JOIN register_visitor r ON v.card_id = r.card_id " \
+              "WHERE v.id< %s ORDER BY v.id DESC LIMIT %s"
         cur.execute(sql, (last_id, count))
     else:
-        sql = "SELECT * FROM register_visitor AS r NATURAL JOIN visitor_stat AS v ORDER BY v.id DESC LIMIT %s"
+        sql = "SELECT name,v.card_id,enter_time,leave_time " \
+              "FROM visitor_stat v LEFT JOIN register_visitor r ON v.card_id = r.card_id " \
+              "ORDER BY v.id DESC LIMIT %s"
         cur.execute(sql, (count,))
     rst = cur.fetchall()
     cur.close()
@@ -131,15 +135,15 @@ def query_raw_record(last_id, count):
 
 def get_visitor_stat_data_by_count(session, param):
     last_id, count = param['last_id'], param['count']
-    rst = query_visitor_stat(last_id, count)
+    rst = query_visitor_stat(int(last_id), int(count))
     return str(rst)
 
 
 if __name__ == '__main__':
     conn_pool = DBConnectionPool()
-    cardInput = CardInputProcessor()
-    input_thread = threading.Thread(target=cardInput.working_loop, name='input-listen')
-    input_thread.start()
+    # cardInput = CardInputProcessor()
+    # input_thread = threading.Thread(target=cardInput.working_loop, name='input-listen')
+    # input_thread.start()
     httpd = EasyServer()
     httpd.get('/api/stat', get_visitor_stat_data_by_count)
     httpd.serve_forever()
