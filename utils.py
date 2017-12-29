@@ -18,6 +18,20 @@ class CJsonEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 
+class JsonHelper:
+    @staticmethod
+    def toJson(obj):
+        return json.dumps(obj, cls=CJsonEncoder)
+
+    @staticmethod
+    def success(data=None):
+        return JsonHelper.toJson({"success": True, "data": data})
+
+    @staticmethod
+    def fail(self, message=""):
+        return JsonHelper.toJson({"success": False, "message": message})
+
+
 class DBConnectionPool:
     def __init__(self, dbname="scu_rm_acs", user="postgres", password="postgres", host="localhost", port=5432):
         self.dbname = dbname

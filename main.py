@@ -1,7 +1,6 @@
 from easy_py_server.easy_server import EasyServer
 from evdev import InputDevice, ecodes
 import threading
-import json
 import utils
 
 
@@ -74,51 +73,69 @@ class CardInputProcessor:
 
 
 # Dao
-def query_visitor_stat(last_id, count):
+
+# query template
+def query(sql, param_tuple=None):
     conn = conn_pool.get_connection()
     cur = conn.cursor()
+    if param_tuple is not None:
+        cur.execute(sql, param_tuple)
+    else:
+        cur.execute(sql)
+    rst = cur.fetchall()
+    cur.close()
+    conn_pool.release_conn(conn)
+    return rst
+
+
+def query_visitor_stat(last_id, count):
     if last_id != -1:
         sql = "SELECT name,v.card_id,enter_time,leave_time " \
               "FROM visitor_stat v LEFT JOIN register_visitor r ON v.card_id = r.card_id " \
               "WHERE v.id< %s ORDER BY v.id DESC LIMIT %s"
-        cur.execute(sql, (last_id, count))
+        return query(sql, (last_id, count))
     else:
         sql = "SELECT name,v.card_id,enter_time,leave_time " \
               "FROM visitor_stat v LEFT JOIN register_visitor r ON v.card_id = r.card_id " \
               "ORDER BY v.id DESC LIMIT %s"
-        cur.execute(sql, (count,))
-    rst = cur.fetchall()
-    cur.close()
-    conn_pool.release_conn(conn)
-    return rst
+        return query(sql, (count,))
 
 
 def query_raw_record(last_id, count):
-    conn = conn_pool.get_connection()
-    cur = conn.cursor()
     if last_id != -1:
         sql = "SELECT * FROM  raw_record WHERE id< %s ORDER BY id DESC LIMIT %s"
-        cur.execute(sql, (last_id, count))
+        return query(sql, (last_id, count))
     else:
         sql = "SELECT * FROM  raw_record ORDER BY id DESC LIMIT %s"
-        cur.execute(sql, (count,))
-    rst = cur.fetchall()
-    cur.close()
-    conn_pool.release_conn(conn)
-    return rst
+        return query(sql, (count,))
+
+
+def query_all_register_visitor():
+    sql = "SELECT * FROM register_visitor ORDER BY register_time DESC "
+    return query(sql)
 
 
 # Controller
 def check_admin_login(session):
-    pass
+    admin = session.get("admin", None)
+    if admin is None:
+        return False
+    else:
+        return True
 
 
 def admin_login(session, param):
+    username = param["username"]
+    password = param["password"]
+    #####
+    session["admin"] = True
     pass
 
 
 def admin_logout(session, param):
-    pass
+    if "admin" in session:
+        session.pop("admin")
+    return utils.JsonHelper.success()
 
 
 def change_password(session, param):
@@ -128,13 +145,13 @@ def change_password(session, param):
 def get_visitor_stat_data_by_count(session, param):
     last_id, count = param['last_id'], param['count']
     rst = query_visitor_stat(int(last_id), int(count))
-    return json.dumps(rst, cls=utils.CJsonEncoder)
+    return utils.JsonHelper.toJson(rst)
 
 
 def get_raw_data_by_count(session, param):
     last_id, count = param['last_id'], param['count']
     rst = query_raw_record(int(last_id), int(count))
-    return json.dumps(rst, cls=utils.CJsonEncoder)
+    return utils.JsonHelper.toJson(rst)
 
 
 def get_register_visitors(session, param):
