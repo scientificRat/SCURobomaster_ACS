@@ -1,34 +1,8 @@
 from easy_py_server.easy_server import EasyServer
 from evdev import InputDevice, ecodes
-import threading, datetime, psycopg2
-
-
-def get_current_time():
-    return datetime.datetime.now()
-
-
-class DBConnectionPool:
-    def __init__(self):
-        self.pool = []
-        self.pool_lock = threading.Lock()
-
-    def get_connection(self):
-        self.pool_lock.acquire()
-        conn = None
-        if len(self.pool) == 0:
-            try:
-                conn = psycopg2.connect(dbname="scu_rm_acs", user="postgres", password="postgres", host="localhost")
-            except:
-                pass
-        else:
-            conn = self.pool.pop()
-        self.pool_lock.release()
-        return conn
-
-    def release_conn(self, conn):
-        self.pool_lock.acquire()
-        self.pool.append(conn)
-        self.pool_lock.release()
+import threading
+import json
+import utils
 
 
 class CardInputProcessor:
@@ -59,7 +33,7 @@ class CardInputProcessor:
                     if last_value == 1 and event.value == 0:
                         if key == 28:  # enter pressed
                             print("ACCESS:" + card_id)
-                            curr_time = get_current_time()
+                            curr_time = utils.get_current_time()
                             # persist
                             self.persist_raw_record(card_id, curr_time)
                             if card_id in self._inside_visitors_dic:
@@ -99,6 +73,7 @@ class CardInputProcessor:
         return card_id
 
 
+# Dao
 def query_visitor_stat(last_id, count):
     conn = conn_pool.get_connection()
     cur = conn.cursor()
@@ -122,10 +97,10 @@ def query_raw_record(last_id, count):
     conn = conn_pool.get_connection()
     cur = conn.cursor()
     if last_id != -1:
-        sql = "SELECT * FROM  raw_record WHERE id< %s ORDER BY v.id DESC LIMIT %s"
+        sql = "SELECT * FROM  raw_record WHERE id< %s ORDER BY id DESC LIMIT %s"
         cur.execute(sql, (last_id, count))
     else:
-        sql = "SELECT * FROM  raw_record ORDER BY v.id DESC LIMIT %s"
+        sql = "SELECT * FROM  raw_record ORDER BY id DESC LIMIT %s"
         cur.execute(sql, (count,))
     rst = cur.fetchall()
     cur.close()
@@ -133,18 +108,58 @@ def query_raw_record(last_id, count):
     return rst
 
 
+# Controller
+def check_admin_login(session):
+    pass
+
+
+def admin_login(session, param):
+    pass
+
+
+def admin_logout(session, param):
+    pass
+
+
+def change_password(session, param):
+    pass
+
+
 def get_visitor_stat_data_by_count(session, param):
     last_id, count = param['last_id'], param['count']
     rst = query_visitor_stat(int(last_id), int(count))
-    return str(rst)
+    return json.dumps(rst, cls=utils.CJsonEncoder)
+
+
+def get_raw_data_by_count(session, param):
+    last_id, count = param['last_id'], param['count']
+    rst = query_raw_record(int(last_id), int(count))
+    return json.dumps(rst, cls=utils.CJsonEncoder)
+
+
+def get_register_visitors(session, param):
+    pass
+
+
+def add_register_visitor(session, param):
+    pass
+
+
+def delete_register_visitor(session, param):
+    pass
+
+
+def get_current_card_id(session, param):
+    pass
 
 
 if __name__ == '__main__':
-    conn_pool = DBConnectionPool()
+    conn_pool = utils.DBConnectionPool()
     # cardInput = CardInputProcessor()
     # input_thread = threading.Thread(target=cardInput.working_loop, name='input-listen')
     # input_thread.start()
     httpd = EasyServer()
-    httpd.get('/api/stat', get_visitor_stat_data_by_count)
+    httpd.get('/api/stat', response_type="application/json; charset=utf-8", listener=get_visitor_stat_data_by_count)
+    httpd.get('/api/raw', response_type="application/json; charset=utf-8", listener=get_raw_data_by_count)
     httpd.serve_forever()
     print("bye!")
