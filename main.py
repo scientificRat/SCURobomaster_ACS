@@ -72,7 +72,9 @@ class CardInputProcessor:
         return card_id
 
 
+################################################################################
 # Dao
+################################################################################
 
 # query template
 def query(sql, param_tuple=None):
@@ -88,7 +90,19 @@ def query(sql, param_tuple=None):
     return rst
 
 
-def query_visitor_stat(last_id, count):
+def execute_one(sql, param_tuple=None):
+    conn = conn_pool.get_connection()
+    cur = conn.cursor()
+    if param_tuple is not None:
+        cur.execute(sql, param_tuple)
+    else:
+        cur.execute(sql)
+    conn.commit()
+    cur.close()
+    conn_pool.release_conn(conn)
+
+
+def query_visitor_stat_by_id(last_id, count):
     if last_id != -1:
         sql = "SELECT name,v.card_id,enter_time,leave_time " \
               "FROM visitor_stat v LEFT JOIN register_visitor r ON v.card_id = r.card_id " \
@@ -101,7 +115,14 @@ def query_visitor_stat(last_id, count):
         return query(sql, (count,))
 
 
-def query_raw_record(last_id, count):
+def query_visitor_stat_by_date(start, end):
+    sql = "SELECT name,v.card_id,enter_time,leave_time " \
+          "FROM visitor_stat v LEFT JOIN register_visitor r ON v.card_id = r.card_id " \
+          "WHERE v.enter_time>=%s AND v.leave_time<=%s ORDER BY v.id DESC"
+    return query(sql, (start, end))
+
+
+def query_raw_record_by_id(last_id, count):
     if last_id != -1:
         sql = "SELECT * FROM  raw_record WHERE id< %s ORDER BY id DESC LIMIT %s"
         return query(sql, (last_id, count))
@@ -115,21 +136,20 @@ def query_all_register_visitor():
     return query(sql)
 
 
+################################################################################
 # Controller
-def check_admin_login(session):
-    admin = session.get("admin", None)
-    if admin is None:
-        return False
-    else:
-        return True
+################################################################################
+def get_curr_admin_name(session):
+    return session.get("admin", None)
 
 
 def admin_login(session, param):
     username = param["username"]
     password = param["password"]
-    #####
-    session["admin"] = True
-    pass
+    sql = "SELECT COUNT(*) FROM administrator WHERE user_name=%s AND password=MD5(%s)"
+    rst = query(sql, (username, password))
+    session["admin"] = username
+    return utils.JsonHelper.success(rst)
 
 
 def admin_logout(session, param):
@@ -139,18 +159,26 @@ def admin_logout(session, param):
 
 
 def change_password(session, param):
-    pass
+    username = get_curr_admin_name(session)
+    if username is None:
+        return utils.JsonHelper.fail("Admin not login!")
+    old = param["old_psw"]
+    new = param["new_psw"]
+    sql = "UPDATE administrator SET password=MD5(%s) WHERE user_name=%s AND password=%s"
+    execute_one(sql, (new, username, old))
+    # TODO: NOT FINISHED
+    return utils.JsonHelper.success()
 
 
-def get_visitor_stat_data_by_count(session, param):
+def get_visitor_stat_data_by_id(session, param):
     last_id, count = param['last_id'], param['count']
-    rst = query_visitor_stat(int(last_id), int(count))
+    rst = query_visitor_stat_by_id(int(last_id), int(count))
     return utils.JsonHelper.toJson(rst)
 
 
 def get_raw_data_by_count(session, param):
     last_id, count = param['last_id'], param['count']
-    rst = query_raw_record(int(last_id), int(count))
+    rst = query_raw_record_by_id(int(last_id), int(count))
     return utils.JsonHelper.toJson(rst)
 
 
@@ -170,13 +198,15 @@ def get_current_card_id(session, param):
     pass
 
 
+################################################################################
+
 if __name__ == '__main__':
     conn_pool = utils.DBConnectionPool()
     # cardInput = CardInputProcessor()
     # input_thread = threading.Thread(target=cardInput.working_loop, name='input-listen')
     # input_thread.start()
     httpd = EasyServer()
-    httpd.get('/api/stat', response_type="application/json; charset=utf-8", listener=get_visitor_stat_data_by_count)
+    httpd.get('/api/stat', response_type="application/json; charset=utf-8", listener=get_visitor_stat_data_by_id)
     httpd.get('/api/raw', response_type="application/json; charset=utf-8", listener=get_raw_data_by_count)
     httpd.serve_forever()
     print("bye!")
