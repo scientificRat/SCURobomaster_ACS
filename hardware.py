@@ -1,6 +1,7 @@
 from evdev import InputDevice, ecodes  # only some linux(ubuntu,debian...) has this package
 import threading
 import utils
+import conn_pool
 
 
 class CardInputProcessor:
@@ -13,7 +14,7 @@ class CardInputProcessor:
         # init device
         self.dev = InputDevice(device)
         # init database
-        self.conn = utils.conn_pool.get_connection()
+        self.conn = conn_pool.get_connection()
         self.cur = self.conn.cursor()
         pass
 

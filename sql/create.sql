@@ -1,6 +1,6 @@
-CREATE TABLE administrator (
+CREATE TABLE system_admin (
   user_name VARCHAR(25),
-  password  VARCHAR(25),
+  password  CHAR(32),
   PRIMARY KEY (user_name)
 );
 

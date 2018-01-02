@@ -1,67 +1,104 @@
 from easy_py_server import Httpd
 import utils
-from dao import *
+import dao
+
+__ADMIN_SESSION_KEY = "admin"
 
 
-@Httpd.get("/admin/login", content_type="application/json; charset=utf-8")
+def is_admin_login(request):
+    if request.getSession(__ADMIN_SESSION_KEY) is None:
+        return False
+    return True
+
+
+@Httpd.post("/admin/login", content_type="application/json; charset=utf-8")
 def admin_login(request, response):
     username = request.getParam("username")
     password = request.getParam("password")
-    sql = "SELECT COUNT(*) FROM administrator WHERE user_name=%s AND password=MD5(%s)"
-    rst = query(sql, (username, password))
-    request.setSession("admin", username)
-    return utils.JsonHelper.success(rst)
+    if dao.check_admin_password(username, password):
+        request.setSession(__ADMIN_SESSION_KEY, username)
+        return utils.JsonHelper.success()
+    else:
+        return utils.JsonHelper.fail("username or password not correct")
 
 
-@Httpd.get("/admin/change-password", content_type="application/json; charset=utf-8")
+@Httpd.post("/admin/log-out", content_type="application/json; charset=utf-8")
 def admin_logout(request, response):
-    request.removeSession("admin")
-    response.setContentType("application/json; charset=utf-8")
+    request.removeSession(__ADMIN_SESSION_KEY)
     return utils.JsonHelper.success()
 
 
-@Httpd.get("/admin/change-password", content_type="application/json; charset=utf-8")
+@Httpd.post("/admin/change-password", content_type="application/json; charset=utf-8")
 def change_password(request, response):
-    username = request.getSession("admin")
+    old = request.getParam("old-psw")
+    new = request.getParam("new-psw")
+    username = request.getSession(__ADMIN_SESSION_KEY)
     if username is None:
-        return utils.JsonHelper.fail("Admin not login!")
-    old = request.getParam("old_psw")
-    new = request.getParam("new_psw")
-    sql = "UPDATE administrator SET password=MD5(%s) WHERE user_name=%s AND password=%s"
-    execute_one(sql, (new, username, old))
-    # TODO: NOT FINISHED
+        return utils.JsonHelper.fail("admin not login!")
+    if not dao.check_admin_password(username, old):
+        return utils.JsonHelper.fail("current password not correct!")
+    dao.update_admin_password(username, old, new)
     return utils.JsonHelper.success()
 
 
-@Httpd.get("/data/stat", content_type="application/json; charset=utf-8")
-def get_visitor_stat_data_by_id(request, response):
-    last_id, count = request.getParam('last_id'), request.getParam('count')
-    rst = query_visitor_stat_by_id(int(last_id), int(count))
-    return utils.JsonHelper.toJson(rst)
+@Httpd.get("/data/visitor-stat/by-count", content_type="application/json; charset=utf-8")
+def get_visitor_stat_data_by_count(request, response):
+    if not is_admin_login(request):
+        return utils.JsonHelper.fail("admin login required")
+    last_id, count = request.getParam('last-id'), request.getParam('count')
+    rst = dao.query_visitor_stat_by_count(int(last_id), int(count))
+    return utils.JsonHelper.to_json(rst)
 
 
-@Httpd.get("/data/raw", content_type="application/json; charset=utf-8")
+@Httpd.get("/data/visitor-stat/by-date", content_type="application/json; charset=utf-8")
+def get_visitor_stat_data_by_date(request, response):
+    if not is_admin_login(request):
+        return utils.JsonHelper.fail("admin login required")
+    start, end = request.getParam('start'), request.getParam('end')
+    rst = dao.query_visitor_stat_by_date(start, end)
+    return utils.JsonHelper.to_json(rst)
+
+
+@Httpd.get("/data/raw/by-count", content_type="application/json; charset=utf-8")
 def get_raw_data_by_count(request, response):
+    if not is_admin_login(request):
+        return utils.JsonHelper.fail("admin login required")
     last_id, count = request.getParam('last_id'), request.getParam('count')
-    rst = query_raw_record_by_id(int(last_id), int(count))
-    return utils.JsonHelper.toJson(rst)
+    rst = dao.query_raw_record_by_count(int(last_id), int(count))
+    return utils.JsonHelper.to_json(rst)
 
 
 @Httpd.get("/data/register-visitors", content_type="application/json; charset=utf-8")
 def get_register_visitors(request, response):
-    pass
+    if not is_admin_login(request):
+        return utils.JsonHelper.fail("admin login required")
+    rst = dao.query_all_register_visitor()
+    return utils.JsonHelper.to_json(rst)
 
 
 @Httpd.post("/add/register-visitors", content_type="application/json; charset=utf-8")
 def add_register_visitor(request, response):
-    pass
+    if not is_admin_login(request):
+        return utils.JsonHelper.fail("admin login required")
+    card_id = request.getParam("card-id")
+    name = request.getParam("name")
+    dao.add_register_visitor(card_id, name)
+    return utils.JsonHelper.success()
 
 
 @Httpd.post("/delete/register-visitors", content_type="application/json; charset=utf-8")
 def delete_register_visitor(request, response):
-    pass
+    if not is_admin_login(request):
+        return utils.JsonHelper.fail("admin login required")
+    ID = request.getParam("id")
+    if dao.delete_register_visitor(ID):
+        return utils.JsonHelper.success()
+    else:
+        return utils.JsonHelper.fail("id may not exist")
 
 
 @Httpd.post("/data/current-card-id", content_type="application/json; charset=utf-8")
 def get_current_card_id(request, response):
+    if not is_admin_login(request):
+        return utils.JsonHelper.fail("admin login required")
     pass

@@ -18,13 +18,13 @@ class CJsonEncoder(json.JSONEncoder):
 
 class JsonHelper:
     @staticmethod
-    def toJson(obj):
+    def to_json(obj):
         return json.dumps(obj, cls=CJsonEncoder)
 
     @staticmethod
     def success(data=None):
-        return JsonHelper.toJson({"success": True, "data": data})
+        return JsonHelper.to_json({"success": True, "data": data})
 
     @staticmethod
     def fail(message=""):
-        return JsonHelper.toJson({"success": False, "message": message})
+        return JsonHelper.to_json({"success": False, "message": message})
