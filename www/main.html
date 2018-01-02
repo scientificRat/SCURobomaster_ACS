@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+    <meta name="renderer" content="webkit">
+    <link rel="stylesheet" href="assets/css/amazeui.min.css">
+    <title>SCURM 访客管理</title>
+    <style>
+        .tab{display: none}
+    </style>
+</head>
+<body>
+<header class="am-topbar am-topbar-fixed-top">
+    <div class="am-container">
+        <h1 class="am-topbar-brand">SCURM 访客管理系统</h1>
+        <div class="am-topbar-right">
+            <button class="am-btn am-btn-default am-topbar-btn am-btn-sm">退出</button>
+        </div>
+    </div>
+
+</header>
+<p></p>
+<div class="am-container" style="margin-top: 58px;">
+    <br/>
+    <div class="am-btn-group">
+        <button type="button" onclick="switchVisitorStat()" id="visitor-stat-button" class="am-btn am-btn-default">访客统计</button>
+        <button type="button" onclick="switchRawData()" id="raw-data-button" class="am-btn am-btn-default">原始数据</button>
+        <button type="button" onclick="switchVisitorData()" id="visitor-data-button" class="am-btn am-btn-default">用户资料</button>
+    </div>
+    <div class="tab" id="visitor-stat">
+        <br/>
+        <h1>场内人员</h1>
+        <table class="am-table am-table-striped am-table-hover">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>卡号</th>
+                <th>姓名</th>
+            </tr>
+            </thead>
+            <tbody id="inside-visitors-table">
+
+            </tbody>
+        </table>
+        <hr>
+        <h1>访客统计</h1>
+        <button class="am-btn am-btn-default">导出电子表格</button>
+        <table class="am-table am-table-striped am-table-hover">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>卡号</th>
+                <th>姓名</th>
+                <th>进入时间</th>
+                <th>离开时间</th>
+            </tr>
+            </thead>
+            <tbody id="visitors-stat-table">
+
+            </tbody>
+        </table>
+        <div class="am-container am-text-right">
+            <button class="am-btn am-btn-default">更多</button>
+        </div>
+
+    </div>
+
+    <div class="tab" id="raw-data">
+        <br/>
+        <h1>原始数据</h1>
+        <table class="am-table am-table-striped am-table-hover">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>卡号</th>
+            </tr>
+            </thead>
+            <tbody id="raw-data-table">
+
+            </tbody>
+        </table>
+
+    </div>
+
+    <div class="tab" id="visitor-data">
+        <br/>
+        <h1>用户资料</h1>
+        <table class="am-table am-table-striped am-table-hover">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>卡号</th>
+            </tr>
+            </thead>
+            <tbody id="visitor-table">
+
+            </tbody>
+        </table>
+    </div>
+
+</div>
+<script></script>
+<script src="assets/js/jquery.min.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>

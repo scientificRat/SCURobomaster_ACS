@@ -6,7 +6,7 @@
           content="width=device-width, initial-scale=1">
     <meta name="renderer" content="webkit">
     <link rel="stylesheet" href="assets/css/amazeui.min.css">
-    <title>SCURM 门禁</title>
+    <title>SCURM 访客管理</title>
     <style>
     .header {
       text-align: center;
@@ -31,20 +31,18 @@
 </div>
 <div class="am-g">
   <div class="am-u-lg-6 am-u-md-8 am-u-sm-centered">
-
     <br>
     <br>
-
-    <form method="post" class="am-form">
+    <form class="am-form">
       <label>管理员账号:</label>
-      <input type="text" name="" id="username" value="">
+      <input type="text" id="username" value="">
       <br>
       <label for="password">密码:</label>
-      <input type="password" name="" id="password" value="">
+      <input type="password"  id="password" value="">
       <br>
-      <br />
+      <br/>
       <div class="am-cf">
-        <input type="submit" name="" value="登 录" class="am-btn am-btn-primary am-btn-sm am-fl">
+          <button id="submit" class="am-btn am-btn-primary am-btn-sm am-fl">登 录</button>
       </div>
     </form>
     <hr>
@@ -52,9 +50,7 @@
   </div>
 </div>
 
-
-
-<script src="assets/js/jquery-3.2.1.min.js"></script>
-<script src="assets/js/amazeui.min.js"></script>
+<script src="assets/js/jquery.min.js"></script>
+<script src="assets/js/login.js"></script>
 </body>
 </html>
