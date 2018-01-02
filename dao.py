@@ -1,3 +1,4 @@
+from typing import Sequence
 import conn_pool
 
 
@@ -71,8 +72,13 @@ def query_raw_record_by_count(last_id, count):
 
 
 def query_all_register_visitor():
-    sql = "SELECT * FROM register_visitor ORDER BY register_time DESC "
+    sql = "SELECT id,card_id,name FROM register_visitor ORDER BY register_time DESC "
     return query(sql)
+
+
+def query_register_visitors_by_card_id(card_id_list: Sequence[str]):
+    sql = "SELECT id,card_id,name FROM register_visitor WHERE card_id = ANY(%s)"
+    return query(sql, (card_id_list,))
 
 
 def add_register_visitor(card_id, name):
@@ -92,3 +98,13 @@ def delete_register_visitor(ID):
         return False
     else:
         return True
+
+
+def persist_raw_record(card_id, time):
+    sql = "INSERT INTO raw_record(card_id, time) VALUES (%s, %s) "
+    execute_one(sql, (card_id, time))
+
+
+def persist_access_record(card_id, enter_time, leave_time):
+    sql = "INSERT INTO visitor_stat(card_id, enter_time, leave_time) VALUES (%s, %s, %s) "
+    execute_one(sql, (card_id, enter_time, leave_time))

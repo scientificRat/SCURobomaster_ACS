@@ -17,8 +17,7 @@ def get_connection():
     conn = None
     if len(__pool) == 0:
         try:
-            conn = psycopg2.connect(dbname=__dbname, user=__user, password=__password, host=__host,
-                                    port=__port)
+            conn = psycopg2.connect(dbname=__dbname, user=__user, password=__password, host=__host, port=__port)
         except:
             pass
     else:
@@ -45,6 +44,7 @@ def start_conn_pool(dbname="scu_rm_acs", user="postgres", password="postgres", h
         __password = password
         __host = host
         __port = port
+        print("Connection pool started")
     else:
         print("connection pool already started!")
     pass

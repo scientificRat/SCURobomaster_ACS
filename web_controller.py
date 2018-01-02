@@ -1,6 +1,7 @@
 from easy_py_server import Httpd
 import utils
 import dao
+import hardware
 
 __ADMIN_SESSION_KEY = "admin"
 
@@ -68,7 +69,7 @@ def get_raw_data_by_count(request, response):
     return utils.JsonHelper.to_json(rst)
 
 
-@Httpd.get("/data/register-visitors", content_type="application/json; charset=utf-8")
+@Httpd.get("/data/register-visitor/all", content_type="application/json; charset=utf-8")
 def get_register_visitors(request, response):
     if not is_admin_login(request):
         return utils.JsonHelper.fail("admin login required")
@@ -76,7 +77,7 @@ def get_register_visitors(request, response):
     return utils.JsonHelper.to_json(rst)
 
 
-@Httpd.post("/add/register-visitors", content_type="application/json; charset=utf-8")
+@Httpd.post("/add/register-visitor", content_type="application/json; charset=utf-8")
 def add_register_visitor(request, response):
     if not is_admin_login(request):
         return utils.JsonHelper.fail("admin login required")
@@ -86,7 +87,7 @@ def add_register_visitor(request, response):
     return utils.JsonHelper.success()
 
 
-@Httpd.post("/delete/register-visitors", content_type="application/json; charset=utf-8")
+@Httpd.post("/delete/register-visitor", content_type="application/json; charset=utf-8")
 def delete_register_visitor(request, response):
     if not is_admin_login(request):
         return utils.JsonHelper.fail("admin login required")
@@ -97,8 +98,16 @@ def delete_register_visitor(request, response):
         return utils.JsonHelper.fail("id may not exist")
 
 
-@Httpd.post("/data/current-card-id", content_type="application/json; charset=utf-8")
+@Httpd.get("/data/current-card-id", content_type="application/json; charset=utf-8")
 def get_current_card_id(request, response):
     if not is_admin_login(request):
         return utils.JsonHelper.fail("admin login required")
-    pass
+    return utils.JsonHelper.success(hardware.get_current_card_id())
+
+
+@Httpd.get("/data/inside-visitor/all", content_type="application/json; charset=utf-8")
+def get_inside_visitors(request, response):
+    if not is_admin_login(request):
+        return utils.JsonHelper.fail("admin login required")
+    inside_visitors_card_id = hardware.get_inside_visitors_card_id()
+    return utils.JsonHelper.success(dao.query_register_visitors_by_card_id(inside_visitors_card_id))
