@@ -8,9 +8,11 @@ import dao
 DEFAULT_CARD_INPUT_DEVICE = '/dev/input/by-id/usb-HXGCoLtd_HIDKeys-event-kbd'
 
 __current_card_id = ""
-__current_card_id_lock = threading.Lock()
 __inside_visitors_dic = {}  # card_id ---> enter_time
 __dev = None
+__importing_mode = False
+__mode_lock = threading.Lock()
+__update_time = utils.get_current_time()
 
 
 def start(device=DEFAULT_CARD_INPUT_DEVICE):
@@ -24,18 +26,26 @@ def start(device=DEFAULT_CARD_INPUT_DEVICE):
 
 
 def get_current_card_id() -> str:
-    __current_card_id_lock.acquire()
-    card_id = __current_card_id
-    __current_card_id_lock.release()
-    return card_id
+    return __current_card_id
 
 
 def get_inside_visitors_card_id() -> Sequence[str]:
     return [k for k in __inside_visitors_dic]
 
 
+def set_importing_mode():
+    global __importing_mode
+    __mode_lock.acquire()
+    __importing_mode = True
+    __mode_lock.release()
+
+
+def get_update_time():
+    return __update_time
+
+
 def __working_loop():
-    global __current_card_id
+    global __current_card_id, __importing_mode, __update_time
     last_value = 28
     last_key = None
     card_id = ""
@@ -50,6 +60,7 @@ def __working_loop():
                     if key == 28:  # enter pressed
                         print("ACCESS:" + card_id)
                         curr_time = utils.get_current_time()
+                        __mode_lock.acquire()
                         # persist
                         __persist_raw_record(card_id, curr_time)
                         if card_id in __inside_visitors_dic:
@@ -57,10 +68,11 @@ def __working_loop():
                             __persist_access_record(card_id, enter_time, leave_time=curr_time)
                         else:
                             __inside_visitors_dic[card_id] = curr_time
-                        # TODO:可以用读写锁优化
-                        __current_card_id_lock.acquire()
+                        if __importing_mode:
+                            __importing_mode = False
+                        __mode_lock.release()
                         __current_card_id = card_id
-                        __current_card_id_lock.release()
+                        __update_time = curr_time  # I'm not sure if this operation is atomic and thread-safe :)
                         card_id = ""
                     else:
                         card_id += str(key)
@@ -68,6 +80,8 @@ def __working_loop():
 
 
 def __persist_raw_record(card_id, time):
+    if __importing_mode:
+        return
     try:
         dao.persist_raw_record(card_id, time)
     except Exception as e:
@@ -76,6 +90,8 @@ def __persist_raw_record(card_id, time):
 
 
 def __persist_access_record(card_id, enter_time, leave_time):
+    if __importing_mode:
+        return
     try:
         dao.persist_access_record(card_id, enter_time, leave_time)
     except Exception as e:

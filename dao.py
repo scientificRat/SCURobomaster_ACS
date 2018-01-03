@@ -44,19 +44,19 @@ def update_admin_password(username, old, new):
 
 def query_visitor_stat_by_count(last_id, count):
     if last_id != -1:
-        sql = "SELECT name,v.card_id,enter_time,leave_time " \
+        sql = "SELECT v.card_id,name,enter_time,leave_time " \
               "FROM visitor_stat v LEFT JOIN register_visitor r ON v.card_id = r.card_id " \
               "WHERE v.id< %s ORDER BY v.id DESC LIMIT %s"
         return query(sql, (last_id, count))
     else:
-        sql = "SELECT name,v.card_id,enter_time,leave_time " \
+        sql = "SELECT v.card_id,name,enter_time,leave_time " \
               "FROM visitor_stat v LEFT JOIN register_visitor r ON v.card_id = r.card_id " \
               "ORDER BY v.id DESC LIMIT %s"
         return query(sql, (count,))
 
 
 def query_visitor_stat_by_date(start, end):
-    sql = "SELECT name,v.card_id,enter_time,leave_time " \
+    sql = "SELECT v.card_id,name,enter_time,leave_time " \
           "FROM visitor_stat v LEFT JOIN register_visitor r ON v.card_id = r.card_id " \
           "WHERE v.enter_time>=%s AND v.leave_time<=%s ORDER BY v.id DESC"
     return query(sql, (start, end))

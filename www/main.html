@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
@@ -8,7 +8,9 @@
     <link rel="stylesheet" href="assets/css/amazeui.min.css">
     <title>SCURM 访客管理</title>
     <style>
-        .tab{display: none}
+        .tab {
+            display: none
+        }
     </style>
 </head>
 <body>
@@ -16,7 +18,8 @@
     <div class="am-container">
         <h1 class="am-topbar-brand">SCURM 访客管理系统</h1>
         <div class="am-topbar-right">
-            <button class="am-btn am-btn-default am-topbar-btn am-btn-sm">退出</button>
+            <button id="change-password-button" class="am-btn am-btn-default am-topbar-btn am-btn-sm">修改密码</button>
+            <button id="exit-button" class="am-btn am-btn-default am-topbar-btn am-btn-sm">退出</button>
         </div>
     </div>
 
@@ -25,9 +28,13 @@
 <div class="am-container" style="margin-top: 58px;">
     <br/>
     <div class="am-btn-group">
-        <button type="button" onclick="switchVisitorStat()" id="visitor-stat-button" class="am-btn am-btn-default">访客统计</button>
+        <button type="button" onclick="switchVisitorStat()" id="visitor-stat-button" class="am-btn am-btn-default">
+            访客统计
+        </button>
         <button type="button" onclick="switchRawData()" id="raw-data-button" class="am-btn am-btn-default">原始数据</button>
-        <button type="button" onclick="switchVisitorData()" id="visitor-data-button" class="am-btn am-btn-default">用户资料</button>
+        <button type="button" onclick="switchVisitorData()" id="visitor-data-button" class="am-btn am-btn-default">
+            用户资料
+        </button>
     </div>
     <div class="tab" id="visitor-stat">
         <br/>
@@ -40,7 +47,7 @@
                 <th>姓名</th>
             </tr>
             </thead>
-            <tbody id="inside-visitors-table">
+            <tbody id="inside-visitor-table">
 
             </tbody>
         </table>
@@ -50,21 +57,19 @@
         <table class="am-table am-table-striped am-table-hover">
             <thead>
             <tr>
-                <th>id</th>
                 <th>卡号</th>
                 <th>姓名</th>
                 <th>进入时间</th>
                 <th>离开时间</th>
             </tr>
             </thead>
-            <tbody id="visitors-stat-table">
+            <tbody id="visitor-stat-table">
 
             </tbody>
         </table>
         <div class="am-container am-text-right">
-            <button class="am-btn am-btn-default">更多</button>
+            <button id="more-visitor-stat" class="am-btn am-btn-default">更多</button>
         </div>
-
     </div>
 
     <div class="tab" id="raw-data">
@@ -75,6 +80,7 @@
             <tr>
                 <th>id</th>
                 <th>卡号</th>
+                <th>刷卡时间</th>
             </tr>
             </thead>
             <tbody id="raw-data-table">
@@ -92,16 +98,21 @@
             <tr>
                 <th>id</th>
                 <th>卡号</th>
+                <th>姓名</th>
+                <th>操作</th>
             </tr>
             </thead>
             <tbody id="visitor-table">
 
             </tbody>
         </table>
+
+        <button class="am-btn am-btn-primary">新增</button>
     </div>
 
 </div>
-<script></script>
+
+
 <script src="assets/js/jquery.min.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
