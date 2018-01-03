@@ -61,14 +61,15 @@ def __working_loop():
                         print("ACCESS:" + card_id)
                         curr_time = utils.get_current_time()
                         __mode_lock.acquire()
-                        # persist
-                        __persist_raw_record(card_id, curr_time)
-                        if card_id in __inside_visitors_dic:
-                            enter_time = __inside_visitors_dic.pop(card_id)
-                            __persist_access_record(card_id, enter_time, leave_time=curr_time)
+                        if not __importing_mode:
+                            # persist
+                            __persist_raw_record(card_id, curr_time)
+                            if card_id in __inside_visitors_dic:
+                                enter_time = __inside_visitors_dic.pop(card_id)
+                                __persist_access_record(card_id, enter_time, leave_time=curr_time)
+                            else:
+                                __inside_visitors_dic[card_id] = curr_time
                         else:
-                            __inside_visitors_dic[card_id] = curr_time
-                        if __importing_mode:
                             __importing_mode = False
                         __mode_lock.release()
                         __current_card_id = card_id
@@ -80,8 +81,6 @@ def __working_loop():
 
 
 def __persist_raw_record(card_id, time):
-    if __importing_mode:
-        return
     try:
         dao.persist_raw_record(card_id, time)
     except Exception as e:
@@ -90,8 +89,6 @@ def __persist_raw_record(card_id, time):
 
 
 def __persist_access_record(card_id, enter_time, leave_time):
-    if __importing_mode:
-        return
     try:
         dao.persist_access_record(card_id, enter_time, leave_time)
     except Exception as e:

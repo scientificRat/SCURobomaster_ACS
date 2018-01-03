@@ -10,13 +10,11 @@ var visitor_table = $("#visitor-table");
 
 var visitor_stat_exporting_panel = $("#visitor-stat-exporting-panel");
 
-
-var polling_functions = [];
+var modal_loading = $("#modal-loading");
 
 var hardware_update_time = -1;
-var inside_visitor_table_time = 0;
-var visitor_stat_table_time = 0;
-var raw_data_table_time = 0;
+
+var on_time_update_listeners = [];
 
 var visitor_stat_table_max_count = 20;
 
@@ -68,7 +66,7 @@ $(document).ready(function () {
             var raw = rst.data;
             var out = "卡号,姓名,进入时间,离开时间\n";
             for (var i in raw) {
-                raw[i][0] = "ID"+raw[i][0];
+                raw[i][0] = "ID" + raw[i][0];
                 out += raw[i] + "\n";
             }
             var blob = new Blob([out], {type: "text/csv;charset=utf-8"});
@@ -76,13 +74,73 @@ $(document).ready(function () {
         });
     });
 
+    $("#add-register-visitor-button").click(function () {
+        var row = $("<tr></tr>");
+        row.append("<td>--</td>");
+        var td_card_id = $("<td></td>");
+        var card_id_input_group = $("<div class='am-input-group'></div>");
+        td_card_id.append(card_id_input_group);
+        var td_name = $("<td></td>");
+        var td_operation = $("<td></td>");
+        var card_id_input = $("<input class='am-form-field' type='text'>");
+        var read_from_hardware_button = $("<span class='am-input-group-btn'><button class='am-btn am-btn-default'>从设备读取</button></span>");
+        var name_input = $("<input class='am-form-field' type='text'>");
+        var cancel_button = $("<button class='am-btn am-btn-danger am-btn-sm'>取消</button>");
+        var save_button = $("<button class='am-btn am-btn-primary am-btn-sm'>保存</button>");
+        card_id_input_group.append(card_id_input, read_from_hardware_button);
+        td_name.append(name_input);
+        td_operation.append(cancel_button, "<span> </span>", save_button);
+        row.append(td_card_id, td_name, td_operation);
+        visitor_table.append(row);
+
+
+        read_from_hardware_button.click(function () {
+            modal_loading.modal();
+            setImportingMode(function () {
+                var on_update = function () {
+                    queryCurrentCardID(function (rst) {
+                        card_id_input.val(rst.data);
+                        modal_loading.modal('close');
+                        on_time_update_listeners = []
+                    }, function (rst) {
+                        alert(rst.message + " error ");
+                        modal_loading.modal('close');
+                        on_time_update_listeners = []
+                    });
+                };
+                on_time_update_listeners.push(on_update);
+            });
+        });
+
+        cancel_button.click(function () {
+            row.detach();
+        });
+
+        save_button.click(function () {
+            var card_id = card_id_input.val();
+            var name = name_input.val();
+            if (card_id === "" || name === "") {
+                alert("不能为空");
+            } else {
+                addRegisterVisior(card_id, name, function () {
+                    updateVisitors();
+                });
+            }
+        });
+
+
+    });
+
 
     setInterval(function () {
-        for (var k in polling_functions) {
-            polling_functions[k]();
-        }
         queryUpdateTime(function (rst) {
-            hardware_update_time = rst.data;
+            var curr_time = rst.data;
+            if (curr_time !== hardware_update_time) {
+                for (var k in on_time_update_listeners) {
+                    on_time_update_listeners[k]();
+                }
+                hardware_update_time = curr_time;
+            }
         }, function () {
             console.log("query update time fail");
         });
@@ -90,25 +148,26 @@ $(document).ready(function () {
 });
 
 var updateInsideVisitors = function () {
-    if (inside_visitor_table_time !== hardware_update_time) {
-        queryInsideVisitors(loadTableCallback(inside_visitor_table));
-        inside_visitor_table_time = hardware_update_time;
-    }
+    queryInsideVisitors(loadTableCallback(inside_visitor_table));
 };
 
 var updateVisitorStat = function () {
-    if (visitor_stat_table_time !== hardware_update_time) {
-        queryVisitorStatDataByCount(-1, visitor_stat_table_max_count, loadTableCallback(visitor_stat_table));
-        visitor_stat_table_time = hardware_update_time;
-    }
+    queryVisitorStatDataByCount(-1, visitor_stat_table_max_count, loadTableCallback(visitor_stat_table));
 };
 
 var updateRawData = function () {
-    if (raw_data_table_time !== hardware_update_time) {
-        queryRawData(-1, 100, loadTableCallback(raw_data_table));
-        raw_data_table_time = hardware_update_time;
-    }
+    queryRawData(-1, 100, loadTableCallback(raw_data_table));
 };
+
+var updateVisitors = function () {
+    queryVisitorData(loadTableCallback(visitor_table, undefined, false, function (r) {
+        if (confirm("确认删除" + r[2] + "?")) {
+            deleteRegisterVisior(r[0]);
+            updateVisitors();
+        }
+    }));
+};
+
 
 function switchVisitorStat() {
     visitor_stat_tab.fadeIn();
@@ -116,9 +175,9 @@ function switchVisitorStat() {
     visitor_data_tab.hide();
     updateVisitorStat();
     updateInsideVisitors();
-    polling_functions = [];
-    polling_functions.push(updateInsideVisitors);
-    polling_functions.push(updateVisitorStat);
+    on_time_update_listeners = [];
+    on_time_update_listeners.push(updateInsideVisitors);
+    on_time_update_listeners.push(updateVisitorStat);
 }
 
 function switchRawData() {
@@ -126,8 +185,8 @@ function switchRawData() {
     visitor_stat_tab.hide();
     visitor_data_tab.hide();
     updateRawData();
-    polling_functions = [];
-    polling_functions.push(updateRawData);
+    on_time_update_listeners = [];
+    on_time_update_listeners.push(updateRawData);
 }
 
 
@@ -135,18 +194,15 @@ function switchVisitorData() {
     visitor_data_tab.fadeIn();
     visitor_stat_tab.hide();
     raw_data_tab.hide();
-    queryVisitorData(loadTableCallback(visitor_table, undefined, false, function (r) {
-        console.log(r);
-        deleteRegisterVisior(r[0]);
-    }));
+    on_time_update_listeners = [];
+    updateVisitors();
 }
 
 
 function loadTableCallback(table, null_html, append, delete_callback) {
     append = append || false;
     null_html = null_html || "<span style='color: #8B0000;'>unknown</span>";
-
-    function load(rst) {
+    var load = function (rst) {
         var data = rst.data;
         if (!rst.success || data === undefined) {
             alert(rst.message + " server error!! This may be a bug");
@@ -166,15 +222,18 @@ function loadTableCallback(table, null_html, append, delete_callback) {
             if (delete_callback) {
                 var temp = $("<td></td>");
                 table_row.append(temp);
-                var button = $("<button data-card-id='' class='am-btn am-btn-sm am-btn-danger'>删除</button>");
-                button.click(function () {
-                    delete_callback(data[r]);
-                });
+                var button = $("<button class='am-btn am-btn-sm am-btn-danger'>删除</button>");
+                (function (t) {
+                    button.click(function () {
+                        delete_callback(t);
+                    });
+                })(data[r]);
+
                 temp.append(button);
             }
             table.append(table_row);
         }
-    }
+    };
 
     return load;
 }
@@ -255,4 +314,11 @@ function queryUpdateTime(on_success, on_fail) {
 
 function setImportingMode(on_success, on_fail) {
     ajax("POST", "/hardware/set-mode/importing", null, on_success, on_fail);
+}
+
+function test(a) {
+    var c = function (rst) {
+        alert(a);
+    };
+    return c;
 }

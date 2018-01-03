@@ -27,3 +27,7 @@ CREATE TABLE visitor_stat (
   leave_time TIMESTAMP NOT NULL,
   PRIMARY KEY (id)
 );
+
+
+-- init user and password, should change after first login
+INSERT INTO system_admin(user_name, password) VALUES ('admin',md5('admin'));

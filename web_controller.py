@@ -84,7 +84,7 @@ def get_register_visitors(request, response):
 def add_register_visitor(request, response):
     if not is_admin_login(request):
         return utils.JsonHelper.fail("admin login required")
-    card_id = request.getParam("card-id")
+    card_id = request.getParam("card_id")
     name = request.getParam("name")
     dao.add_register_visitor(card_id, name)
     return utils.JsonHelper.success()
