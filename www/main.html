@@ -53,7 +53,24 @@
         </table>
         <hr>
         <h1>访客统计</h1>
-        <button class="am-btn am-btn-default">导出电子表格</button>
+        <button id="visitor-stat-exporting-panel-button" class="am-btn am-btn-default">导出电子表格</button>
+        <div class="am-container">
+
+        </div>
+        <div id="visitor-stat-exporting-panel" class="am-g am-g-collapse" style="display: none;margin: 20px 0">
+            <div class="am-u-sm-5">
+                <button type="button" class="am-btn am-btn-default am-margin-right" id="my-start">开始日期</button>
+                <span id="my-startDate">1970-01-01</span><span>(00:00:00)</span>
+            </div>
+            <div class="am-u-sm-5">
+                <button type="button" class="am-btn am-btn-default am-margin-right" id="my-end">结束日期</button>
+                <span id="my-endDate">2100-01-01</span><span>(00:00:00)</span>
+            </div>
+            <div class="am-u-sm-2"><button id="visitor-stat-exporting-button" class="am-btn am-btn-primary">导出</button></div>
+        </div>
+
+
+        <br>
         <table class="am-table am-table-striped am-table-hover">
             <thead>
             <tr>
@@ -114,6 +131,8 @@
 
 
 <script src="assets/js/jquery.min.js"></script>
+<script src="assets/js/amazeui.min.js"></script>
+<script src="assets/js/FileSaver.min.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>

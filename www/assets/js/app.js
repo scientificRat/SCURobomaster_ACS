@@ -8,6 +8,8 @@ var visitor_stat_table = $("#visitor-stat-table");
 var raw_data_table = $("#raw-data-table");
 var visitor_table = $("#visitor-table");
 
+var visitor_stat_exporting_panel = $("#visitor-stat-exporting-panel");
+
 
 var polling_functions = [];
 
@@ -47,6 +49,33 @@ $(document).ready(function () {
         queryVisitorStatDataByCount(-1, visitor_stat_table_max_count, loadTableCallback(visitor_stat_table));
     });
 
+    $("#visitor-stat-exporting-panel-button").click(function () {
+        visitor_stat_exporting_panel.toggle();
+    });
+
+    $('#my-start').datepicker().on('changeDate.datepicker.amui', function (event) {
+        $('#my-startDate').text($('#my-start').data('date'));
+        $(this).datepicker('close');
+    });
+
+    $('#my-end').datepicker().on('changeDate.datepicker.amui', function (event) {
+        $('#my-endDate').text($('#my-end').data('date'));
+        $(this).datepicker('close');
+    });
+
+    $("#visitor-stat-exporting-button").click(function () {
+        queryVisitorStatDataByDate($('#my-startDate').text(), $('#my-endDate').text(), function (rst) {
+            var raw = rst.data;
+            var out = "卡号,姓名,进入时间,离开时间\n";
+            for (var i in raw) {
+                raw[i][0] = "ID"+raw[i][0];
+                out += raw[i] + "\n";
+            }
+            var blob = new Blob([out], {type: "text/csv;charset=utf-8"});
+            saveAs(blob, "visitors.csv");
+        });
+    });
+
 
     setInterval(function () {
         for (var k in polling_functions) {
@@ -82,9 +111,9 @@ var updateRawData = function () {
 };
 
 function switchVisitorStat() {
-    visitor_stat_tab.css("display", "block");
-    raw_data_tab.css("display", "none");
-    visitor_data_tab.css("display", "none");
+    visitor_stat_tab.fadeIn();
+    raw_data_tab.hide();
+    visitor_data_tab.hide();
     updateVisitorStat();
     updateInsideVisitors();
     polling_functions = [];
@@ -93,9 +122,9 @@ function switchVisitorStat() {
 }
 
 function switchRawData() {
-    visitor_stat_tab.css("display", "none");
-    raw_data_tab.css("display", "block");
-    visitor_data_tab.css("display", "none");
+    raw_data_tab.fadeIn();
+    visitor_stat_tab.hide();
+    visitor_data_tab.hide();
     updateRawData();
     polling_functions = [];
     polling_functions.push(updateRawData);
@@ -103,9 +132,9 @@ function switchRawData() {
 
 
 function switchVisitorData() {
-    visitor_stat_tab.css("display", "none");
-    raw_data_tab.css("display", "none");
-    visitor_data_tab.css("display", "block");
+    visitor_data_tab.fadeIn();
+    visitor_stat_tab.hide();
+    raw_data_tab.hide();
     queryVisitorData(loadTableCallback(visitor_table, undefined, false, function (r) {
         console.log(r);
         deleteRegisterVisior(r[0]);
@@ -178,12 +207,6 @@ function ajax(type, url, data, on_success, on_fail) {
     })
 }
 
-// function download(text, name, type) {
-//   var a = document.getElementById("a");
-//   var file = new Blob([text], {type: type});
-//   a.href = URL.createObjectURL(file);
-//   a.download = name;
-// }
 
 function adminLogout(on_success) {
     ajax("POST", "/admin/logout", null, on_success);
