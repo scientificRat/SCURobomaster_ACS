@@ -4,9 +4,9 @@ import psycopg2  # support postgres sql
 # Singleton
 max_connections = 100
 __working = False
-__dbname = "scu_rm_acs"
-__user = "postgres"
-__password = "postgres"
+__dbname = ""
+__user = ""
+__password = ""
 __host, __port = "localhost", 5432
 __pool = []
 __pool_lock = threading.Lock()
@@ -18,8 +18,8 @@ def get_connection():
     if len(__pool) == 0:
         try:
             conn = psycopg2.connect(dbname=__dbname, user=__user, password=__password, host=__host, port=__port)
-        except:
-            pass
+        except Exception as e:
+            print("[error] connect to database failed, " + str(e))
     else:
         conn = __pool.pop()
     __pool_lock.release()
