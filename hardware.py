@@ -1,11 +1,13 @@
-from evdev import InputDevice, ecodes  # only some linux(ubuntu,debian...) has this package
 from typing import Sequence
+import evdev  # only some linux(ubuntu,debian...) has this package
 import threading
 import utils
 import dao
+import os
 
 # singleton
-DEFAULT_CARD_INPUT_DEVICE = '/dev/input/by-id/usb-HXGCoLtd_HIDKeys-event-kbd'
+DEFAULT_CARD_INPUT_DEVICE_NAME = 'usb-HXGCoLtd_HIDKeys-event-kbd'
+DEFAULT_CARD_INPUT_DEVICE_PATH = '/dev/input/by-id/' + DEFAULT_CARD_INPUT_DEVICE_NAME
 
 __current_card_id = ""
 __inside_visitors_dic = {}  # card_id ---> enter_time
@@ -15,14 +17,21 @@ __mode_lock = threading.Lock()
 __update_time = utils.get_current_time()
 
 
-def start(device=DEFAULT_CARD_INPUT_DEVICE):
+def start(device=DEFAULT_CARD_INPUT_DEVICE_PATH):
     global __dev
     # init device
     if __dev is None:
-        __dev = InputDevice(device)
+        print("finding device... : "+ device)
+        while True:
+            devices_name = os.listdir('/dev/input/by-id/')
+            if DEFAULT_CARD_INPUT_DEVICE_NAME in devices_name:
+                break
+        __dev = evdev.InputDevice(device)
+        __dev.grab()
+        print("device found")
         input_thread = threading.Thread(target=__working_loop, name='input-listen')
         input_thread.start()
-        print("Hardware started")
+        print("hardware started")
 
 
 def get_current_card_id() -> str:
@@ -50,7 +59,7 @@ def __working_loop():
     last_key = None
     card_id = ""
     for event in __dev.read_loop():
-        if event.type == ecodes.EV_KEY:
+        if event.type == evdev.ecodes.EV_KEY:
             key = 28 if event.code == 28 else (event.code - 1) % 10
             if key != last_key:
                 last_key = key

@@ -3,8 +3,12 @@ import conn_pool
 import hardware
 import web_controller
 import os
+import utils
 
 if __name__ == '__main__':
+    print("************************************")
+    print(utils.get_current_time().ctime(), "Ready To Start...")
+    print("")
     hardware.start()
     conn_pool.start_conn_pool()
     test_conn = conn_pool.get_connection()
@@ -13,4 +17,4 @@ if __name__ == '__main__':
         os._exit(0)
     else:
         conn_pool.release_conn(test_conn)
-    Httpd.start_serve(port=80)
+    Httpd.start_serve(address="0.0.0.0",port=80)
