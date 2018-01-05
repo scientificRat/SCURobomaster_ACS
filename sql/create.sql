@@ -8,6 +8,7 @@ CREATE TABLE register_visitor (
   id            SERIAL,
   card_id       VARCHAR(25) UNIQUE,
   name          VARCHAR(25) NOT NULL,
+  remark        TEXT DEFAULT '',
   register_time TIMESTAMP,
   PRIMARY KEY (id)
 );
@@ -28,6 +29,5 @@ CREATE TABLE visitor_stat (
   PRIMARY KEY (id)
 );
 
-
 -- init user and password, should change after first login
-INSERT INTO system_admin(user_name, password) VALUES ('admin',md5('admin'));
+INSERT INTO system_admin (user_name, password) VALUES ('admin', md5('admin'));

@@ -44,19 +44,19 @@ def update_admin_password(username, old, new):
 
 def query_visitor_stat_by_count(last_id, count):
     if last_id != -1:
-        sql = "SELECT v.card_id,name,enter_time,leave_time " \
+        sql = "SELECT v.card_id,name,remark,enter_time,leave_time " \
               "FROM visitor_stat v LEFT JOIN register_visitor r ON v.card_id = r.card_id " \
               "WHERE v.id< %s ORDER BY v.id DESC LIMIT %s"
         return query(sql, (last_id, count))
     else:
-        sql = "SELECT v.card_id,name,enter_time,leave_time " \
+        sql = "SELECT v.card_id,name,remark,enter_time,leave_time " \
               "FROM visitor_stat v LEFT JOIN register_visitor r ON v.card_id = r.card_id " \
               "ORDER BY v.id DESC LIMIT %s"
         return query(sql, (count,))
 
 
 def query_visitor_stat_by_date(start, end):
-    sql = "SELECT v.card_id,name,enter_time,leave_time " \
+    sql = "SELECT v.card_id,name,remark,enter_time,leave_time " \
           "FROM visitor_stat v LEFT JOIN register_visitor r ON v.card_id = r.card_id " \
           "WHERE v.enter_time>=%s AND v.leave_time<=%s ORDER BY v.id DESC"
     return query(sql, (start, end))
@@ -72,18 +72,18 @@ def query_raw_record_by_count(last_id, count):
 
 
 def query_all_register_visitor():
-    sql = "SELECT id,card_id,name FROM register_visitor ORDER BY register_time DESC "
+    sql = "SELECT id,card_id,name,remark FROM register_visitor ORDER BY register_time DESC "
     return query(sql)
 
 
 def query_register_visitors_by_card_id(card_id_list: Sequence[str]):
-    sql = "SELECT id,card_id,name FROM register_visitor WHERE card_id = ANY(%s)"
+    sql = "SELECT id,card_id,name,remark FROM register_visitor WHERE card_id = ANY(%s)"
     return query(sql, (card_id_list,))
 
 
-def add_register_visitor(card_id, name):
-    sql = "INSERT INTO register_visitor(card_id, name, register_time) VALUES (%s, %s, CURRENT_TIMESTAMP)"
-    execute_one(sql, (card_id, name))
+def add_register_visitor(card_id, name, remark):
+    sql = "INSERT INTO register_visitor(card_id, name, remark, register_time) VALUES (%s, %s, %s, CURRENT_TIMESTAMP)"
+    execute_one(sql, (card_id, name, remark))
 
 
 def delete_register_visitor(ID):
@@ -92,6 +92,7 @@ def delete_register_visitor(ID):
     cur = conn.cursor()
     cur.execute(sql, (ID,))
     rst = cur.fetchall()
+    conn.commit()
     cur.close()
     conn_pool.release_conn(conn)
     if len(rst) == 0:

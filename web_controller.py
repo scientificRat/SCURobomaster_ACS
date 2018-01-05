@@ -86,7 +86,8 @@ def add_register_visitor(request, response):
         return utils.JsonHelper.fail("admin login required")
     card_id = request.getParam("card_id")
     name = request.getParam("name")
-    dao.add_register_visitor(card_id, name)
+    remark = request.getParam("remark")
+    dao.add_register_visitor(card_id, name, remark)
     return utils.JsonHelper.success()
 
 
@@ -112,7 +113,7 @@ def get_inside_visitors(request, response):
         known_card_ids.append(row[1])
     for card_id in inside_visitors_card_id:
         if card_id not in known_card_ids:
-            rows.append([None, card_id, None])
+            rows.append([None, card_id, None, None])
     return utils.JsonHelper.success(rows)
 
 

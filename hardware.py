@@ -74,10 +74,12 @@ def __working_loop():
                             # persist
                             __persist_raw_record(card_id, curr_time)
                             if card_id in __inside_visitors_dic:
+                                os.popen("espeak -v zh+m3 '离开'")
                                 enter_time = __inside_visitors_dic.pop(card_id)
                                 __persist_access_record(card_id, enter_time, leave_time=curr_time)
                             else:
                                 __inside_visitors_dic[card_id] = curr_time
+                                os.popen("espeak -v zh+m3 '进入'")
                         else:
                             __importing_mode = False
                         __mode_lock.release()
@@ -94,7 +96,6 @@ def __persist_raw_record(card_id, time):
         dao.persist_raw_record(card_id, time)
     except Exception as e:
         print("error", str(utils.get_current_time()), str(e))
-        pass
 
 
 def __persist_access_record(card_id, enter_time, leave_time):
