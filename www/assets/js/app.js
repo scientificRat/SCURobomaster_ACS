@@ -60,7 +60,7 @@ $(document).ready(function () {
     $("#visitor-stat-exporting-button").click(function () {
         queryVisitorStatDataByDate($('#my-startDate').text(), $('#my-endDate').text(), function (rst) {
             var raw = rst.data;
-            var out = "卡号,姓名,进入时间,离开时间\n";
+            var out = "卡号,姓名,备注,进入时间,离开时间\n";
             for (var i in raw) {
                 raw[i][0] = "ID" + raw[i][0];
                 out += raw[i] + "\n";

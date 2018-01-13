@@ -3,7 +3,13 @@ import evdev  # only some linux(ubuntu,debian...) has this package
 import threading
 import utils
 import dao
+
+
+def get_current_card_id() -> str:
+    return __current_card_id
+
 import os
+import httplib2
 
 # singleton
 DEFAULT_CARD_INPUT_DEVICE_NAME = 'usb-HXGCoLtd_HIDKeys-event-kbd'
@@ -15,13 +21,14 @@ __dev = None
 __importing_mode = False
 __mode_lock = threading.Lock()
 __update_time = utils.get_current_time()
+__audio_client = httplib2.Http()
 
 
 def start(device=DEFAULT_CARD_INPUT_DEVICE_PATH):
     global __dev
     # init device
     if __dev is None:
-        print("finding device... : "+ device)
+        print("finding device... : " + device)
         while True:
             devices_name = os.listdir('/dev/input/by-id/')
             if DEFAULT_CARD_INPUT_DEVICE_NAME in devices_name:
@@ -32,11 +39,6 @@ def start(device=DEFAULT_CARD_INPUT_DEVICE_PATH):
         input_thread = threading.Thread(target=__working_loop, name='input-listen')
         input_thread.start()
         print("hardware started")
-
-
-def get_current_card_id() -> str:
-    return __current_card_id
-
 
 def get_inside_visitors_card_id() -> Sequence[str]:
     return [k for k in __inside_visitors_dic]
@@ -51,6 +53,10 @@ def set_importing_mode():
 
 def get_update_time():
     return __update_time
+
+
+def __say(text):
+    __audio_client.request("http://localhost:8090/tts?text=" + text)
 
 
 def __working_loop():
@@ -74,12 +80,12 @@ def __working_loop():
                             # persist
                             __persist_raw_record(card_id, curr_time)
                             if card_id in __inside_visitors_dic:
-                                os.popen("espeak -v zh+m3 '离开'")
+                                __say("离开")
                                 enter_time = __inside_visitors_dic.pop(card_id)
                                 __persist_access_record(card_id, enter_time, leave_time=curr_time)
                             else:
                                 __inside_visitors_dic[card_id] = curr_time
-                                os.popen("espeak -v zh+m3 '进入'")
+                                __say("进入")
                         else:
                             __importing_mode = False
                         __mode_lock.release()
