@@ -1,3 +1,4 @@
+-- you need a postgres sql database
 CREATE TABLE system_admin (
   user_name VARCHAR(25),
   password  CHAR(32),

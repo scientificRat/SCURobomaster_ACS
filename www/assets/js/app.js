@@ -19,7 +19,6 @@ $(document).ready(function () {
     switchVisitorStat();
     $("#change-password-button").click(function () {
         var old_psw = prompt("请输入旧密码", "");
-        console.log(old_psw);
         if (old_psw === null) {
             alert("操作失败");
             return;
@@ -40,7 +39,7 @@ $(document).ready(function () {
 
     $("#more-visitor-stat").click(function () {
         visitor_stat_table_max_count += 20;
-        queryVisitorStatDataByCount(-1, visitor_stat_table_max_count, loadTableCallback(visitor_stat_table));
+        updateVisitorStat();
     });
 
     $("#visitor-stat-exporting-panel-button").click(function () {
@@ -60,13 +59,15 @@ $(document).ready(function () {
     $("#visitor-stat-exporting-button").click(function () {
         queryVisitorStatDataByDate($('#my-startDate').text(), $('#my-endDate').text(), function (rst) {
             var raw = rst.data;
-            var out = "卡号,姓名,备注,进入时间,离开时间\n";
+            var out = "卡号,姓名,学号,学院,备注,进入时间,离开时间\n";
             for (var i in raw) {
                 raw[i][0] = "ID" + raw[i][0];
                 out += raw[i] + "\n";
             }
             var blob = new Blob([out], {type: "text/csv;charset=utf-8"});
-            saveAs(blob, "visitors.csv");
+            var date = new Date();
+            var filename = "visitors-stat-" + date.toLocaleDateString().replace(/\//g, "-") + ".csv";
+            saveAs(blob, filename);
         });
     });
 
@@ -78,21 +79,27 @@ $(document).ready(function () {
         var card_id_input_group = $("<div class='am-input-group'></div>");
         td_card_id.append(card_id_input_group);
         var td_name = $("<td></td>");
+        var td_student_id = $("<td></td>");
+        var td_college = $("<td></td>");
         var td_remark = $("<td></td>");
-        var td_operation = $("<td></td>");
+        var td_operation = $("<td style='width: 16%'></td>");
 
-        var card_id_input = $("<input class='am-form-field' type='text'>");
+        var card_id_input = $("<input class='am-form-field' type='text' placeholder='卡号'>");
         var read_from_hardware_button = $("<span class='am-input-group-btn'><button class='am-btn am-btn-default'>从设备读取</button></span>");
-        var name_input = $("<input class='am-form-field' type='text'>");
-        var remark_input = $("<input class='am-form-field' type='text'>");
+        var name_input = $("<input class='am-form-field' type='text' placeholder='姓名'>");
+        var student_id_input = $("<input class='am-form-field' type='text' placeholder='学号'>");
+        var college_input = $("<input class='am-form-field' type='text' placeholder='学院'>");
+        var remark_input = $("<input class='am-form-field' type='text' placeholder='备注'>");
         var cancel_button = $("<button class='am-btn am-btn-danger am-btn-sm'>取消</button>");
         var save_button = $("<button class='am-btn am-btn-primary am-btn-sm'>保存</button>");
 
         card_id_input_group.append(card_id_input, read_from_hardware_button);
         td_name.append(name_input);
+        td_student_id.append(student_id_input);
+        td_college.append(college_input);
         td_remark.append(remark_input);
         td_operation.append(cancel_button, "<span> </span>", save_button);
-        row.append(td_card_id, td_name, td_remark, td_operation);
+        row.append(td_card_id, td_name, td_student_id, td_college, td_remark, td_operation);
         visitor_table.append(row);
 
         read_from_hardware_button.click(function () {
@@ -120,13 +127,13 @@ $(document).ready(function () {
         save_button.click(function () {
             var card_id = card_id_input.val();
             var name = name_input.val();
+            var student_id = student_id_input.val();
+            var college = college_input.val();
             var remark = remark_input.val();
             if (card_id === "" || name === "") {
-                alert("不能为空");
+                alert("卡号, 姓名 不能为空");
             } else {
-                addRegisterVisitor(card_id, name, remark, function () {
-                    updateVisitors();
-                });
+                addRegisterVisitor(card_id, name, student_id, college, remark, updateVisitors);
             }
         });
     });
@@ -151,7 +158,11 @@ var updateInsideVisitors = function () {
 };
 
 var updateVisitorStat = function () {
-    queryVisitorStatDataByCount(-1, visitor_stat_table_max_count, loadTableCallback(visitor_stat_table));
+    queryVisitorStatDataByCount(-1, visitor_stat_table_max_count, loadTableCallback(visitor_stat_table, undefined, false, function (r) {
+        if (confirm("确认删除记录 ?")) {
+            deleteVisitorStat(r[0], updateVisitorStat);
+        }
+    }, [0]));
 };
 
 var updateRawData = function () {
@@ -161,8 +172,7 @@ var updateRawData = function () {
 var updateVisitors = function () {
     queryVisitorData(loadTableCallback(visitor_table, undefined, false, function (r) {
         if (confirm("确认删除 " + r[2] + " ?")) {
-            deleteRegisterVisitor(r[0]);
-            updateVisitors();
+            deleteRegisterVisitor(r[0], updateVisitors);
         }
     }));
 };
@@ -196,20 +206,24 @@ function switchVisitorData() {
     updateVisitors();
 }
 
-function loadTableCallback(table, null_html, append, delete_callback) {
+function loadTableCallback(table, null_html, append, delete_callback, no_display_cols) {
     append = append || false;
     null_html = null_html || "<span style='color: #8B0000;'>N/A</span>";
+    no_display_cols = no_display_cols || [];
     var load = function (rst) {
         var data = rst.data;
         if (!rst.success || data === undefined) {
             alert(rst.message + " server error!! This may be a bug");
             window.location.href = "/";
-            return
+            return;
         }
         if (!append) table.html("");
         for (var r in data) {
             var table_row = $("<tr></tr>");
             for (var c in data[r]) {
+                if (c in no_display_cols) {
+                    continue;
+                }
                 var item = data[r][c];
                 if (item === null) {
                     item = null_html;
@@ -217,8 +231,8 @@ function loadTableCallback(table, null_html, append, delete_callback) {
                 table_row.append("<td>" + item + "</td>");
             }
             if (delete_callback) {
-                var temp = $("<td></td>");
-                table_row.append(temp);
+                var delete_d = $("<td></td>");
+                table_row.append(delete_d);
                 var button = $("<button class='am-btn am-btn-sm am-btn-danger'>删除</button>");
                 (function (t) {
                     button.click(function () {
@@ -226,7 +240,7 @@ function loadTableCallback(table, null_html, append, delete_callback) {
                     });
                 })(data[r]);
 
-                temp.append(button);
+                delete_d.append(button);
             }
             table.append(table_row);
         }
@@ -285,6 +299,10 @@ function queryVisitorStatDataByDate(start, end, on_success, on_fail) {
     ajax("GET", "/data/visitor-stat/by-date", {start: start, end: end}, on_success, on_fail);
 }
 
+function deleteVisitorStat(id, on_success, on_fail) {
+    ajax("POST", "/delete/visitor-stat/by-id", {id: id}, on_success, on_fail)
+}
+
 function queryRawData(last_id, count, on_success, on_fail) {
     ajax("GET", "/data/raw/by-count", {last_id: last_id, count: count}, on_success, on_fail);
 }
@@ -293,8 +311,14 @@ function queryVisitorData(on_success, on_fail) {
     ajax("GET", "/data/register-visitor/all", null, on_success, on_fail);
 }
 
-function addRegisterVisitor(card_id, name, remark, on_success, on_fail) {
-    ajax("POST", "/add/register-visitor", {card_id: card_id, name: name, remark: remark}, on_success, on_fail);
+function addRegisterVisitor(card_id, name, student_id, college, remark, on_success, on_fail) {
+    ajax("POST", "/add/register-visitor", {
+        card_id: card_id,
+        name: name,
+        student_id: student_id,
+        college: college,
+        remark: remark
+    }, on_success, on_fail);
 }
 
 function deleteRegisterVisitor(id, on_success, on_fail) {
