@@ -128,14 +128,16 @@ def __working_loop():
 
 def __clean_loop():
     # do cleaning everyday 2:00
+    global __update_time
     next_task_time = datetime.datetime.now().replace(hour=2, minute=0, second=0, microsecond=0)
     while True:
         curr_time = datetime.datetime.now()
         if curr_time > next_task_time:
             # clean
             for card_id in __inside_visitors_dic:
-                enter_time = __inside_visitors_dic.pop(card_id)
-                __persist_access_record(card_id, enter_time, leave_time=None)
+                __persist_access_record(card_id, __inside_visitors_dic[card_id], leave_time=None)
+            __inside_visitors_dic.clear()
+            __update_time = curr_time
             next_task_time += datetime.timedelta(days=1)
         else:
             timedelta = next_task_time - curr_time
